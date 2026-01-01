@@ -1,6 +1,14 @@
 # NGC Container Manager
 
-**Version 1.0.0** | Production-Ready GPU Container Management
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
+![NVIDIA](https://img.shields.io/badge/NVIDIA-GPU-76B900?logo=nvidia)
+![Docker](https://img.shields.io/badge/Docker-20.10+-2496ED?logo=docker&logoColor=white)
+![Bash](https://img.shields.io/badge/Bash-4EAA25?logo=gnubash&logoColor=white)
+![CUDA](https://img.shields.io/badge/CUDA-Enabled-76B900)
+
+**Production-Ready GPU Container Management**
 
 A production-grade command-line tool for managing NVIDIA GPU-accelerated Docker containers for deep learning and scientific computing. Simplifies the workflow of running PyTorch, TensorFlow, and other GPU workloads while keeping your code safely on the host machine.
 
