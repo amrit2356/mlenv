@@ -1,0 +1,800 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# NGC Container Manager - Improved Version
+# Version: 1.0.0
+# =============================================================================
+
+VERSION="1.0.0"
+
+# -----------------------------
+# Configuration
+# -----------------------------
+DEFAULT_IMAGE="nvcr.io/nvidia/pytorch:25.12-py3"
+IMAGE="$DEFAULT_IMAGE"
+REQUIREMENTS_PATH=""
+FORCE_REQUIREMENTS=false
+VERBOSE=false
+WORKDIR="$(pwd)"
+PROJECT_NAME="$(basename "$WORKDIR")"
+# Use hash to prevent naming collisions across directories
+WORKDIR_HASH="$(echo "$WORKDIR" | md5sum | cut -c1-8)"
+CONTAINER_NAME="ngc-${PROJECT_NAME}-${WORKDIR_HASH}"
+LOG_DIR="$WORKDIR/.ngc"
+LOG_FILE="$LOG_DIR/ngc.log"
+REQUIREMENTS_MARKER="$LOG_DIR/.requirements_installed"
+
+# NGC Authentication
+NGC_CONFIG_DIR="$HOME/.ngc"
+NGC_CONFIG_FILE="$NGC_CONFIG_DIR/config"
+NGC_REGISTRY="nvcr.io"
+
+# Port forwarding (comma-separated, e.g., "8888:8888,6006:6006")
+PORTS=""
+# GPU devices (e.g., "0,1" or "all")
+GPU_DEVICES="all"
+# Environment file
+ENV_FILE=""
+# Resource limits
+MEMORY_LIMIT=""
+CPU_LIMIT=""
+# User mapping (run as current user, not root)
+RUN_AS_USER=true
+# Custom command for exec
+EXEC_CMD=""
+
+mkdir -p "$LOG_DIR"
+
+# -----------------------------
+# Logging
+# -----------------------------
+log() {
+  echo "$1" | tee -a "$LOG_FILE"
+}
+
+vlog() {
+  local msg="[DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - $1"
+  if [ "$VERBOSE" = true ]; then
+    echo "$msg" | tee -a "$LOG_FILE"
+  else
+    echo "$msg" >> "$LOG_FILE"
+  fi
+}
+
+success() {
+  echo "✔ $1" | tee -a "$LOG_FILE"
+}
+
+info() {
+  echo "ℹ $1" | tee -a "$LOG_FILE"
+}
+
+warn() {
+  echo "⚠ $1" | tee -a "$LOG_FILE"
+}
+
+die() {
+  echo "✖ $1" | tee -a "$LOG_FILE"
+  exit 1
+}
+
+# -----------------------------
+# NGC Authentication
+# -----------------------------
+is_ngc_authenticated() {
+  # Check if docker is logged into nvcr.io
+  if docker info 2>/dev/null | grep -q "Username.*nvcr.io" || \
+     grep -q "nvcr.io" ~/.docker/config.json 2>/dev/null; then
+    return 0
+  fi
+  
+  # Also check our config file
+  if [ -f "$NGC_CONFIG_FILE" ]; then
+    return 0
+  fi
+  
+  return 1
+}
+
+check_ngc_auth() {
+  # Check if trying to use private image
+  if [[ "$IMAGE" == *"nvcr.io"* ]] && [[ "$IMAGE" != *"/nvidia/"* ]]; then
+    # Private image - require authentication
+    if ! is_ngc_authenticated; then
+      error "Private NGC image requires authentication"
+      info "Run: ngc login"
+      return 1
+    fi
+  fi
+  return 0
+}
+
+save_ngc_credentials() {
+  local api_key="$1"
+  mkdir -p "$NGC_CONFIG_DIR"
+  chmod 700 "$NGC_CONFIG_DIR"
+  
+  cat > "$NGC_CONFIG_FILE" <<EOF
+; NVIDIA NGC CLI Configuration
+[CURRENT]
+apikey = $api_key
+format_type = ascii
+org = 
+
+EOF
+  chmod 600 "$NGC_CONFIG_FILE"
+  vlog "NGC credentials saved to $NGC_CONFIG_FILE"
+}
+
+# -----------------------------
+# Preflight checks
+# -----------------------------
+check_docker() {
+  if ! command -v docker >/dev/null 2>&1; then
+    die "Docker is not installed. Install from https://docs.docker.com/get-docker/"
+  fi
+  if ! docker info >/dev/null 2>&1; then
+    die "Docker daemon is not running. Start Docker and try again."
+  fi
+  vlog "Docker check passed"
+}
+
+check_gpu() {
+  if ! docker info 2>/dev/null | grep -q "Runtimes:.*nvidia"; then
+    die "NVIDIA Container Toolkit not detected. Install from https://github.com/NVIDIA/nvidia-container-toolkit"
+  fi
+  vlog "GPU runtime check passed"
+}
+
+check_requirements_file() {
+  if [ -n "$REQUIREMENTS_PATH" ] && [ ! -f "$REQUIREMENTS_PATH" ]; then
+    die "Requirements file not found: $REQUIREMENTS_PATH"
+  fi
+}
+
+# -----------------------------
+# Container operations
+# -----------------------------
+container_exists() {
+  docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"
+}
+
+container_running() {
+  docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"
+}
+
+get_container_status() {
+  if container_exists; then
+    if container_running; then
+      echo "running"
+    else
+      echo "stopped"
+    fi
+  else
+    echo "absent"
+  fi
+}
+
+# -----------------------------
+# Build docker run arguments
+# -----------------------------
+build_docker_args() {
+  local args=()
+  
+  # Base configuration
+  args+=("--name" "$CONTAINER_NAME")
+  args+=("-d")
+  args+=("--restart" "unless-stopped")
+  
+  # GPU configuration
+  if [ "$GPU_DEVICES" = "all" ]; then
+    args+=("--gpus" "all")
+  else
+    args+=("--gpus" "\"device=${GPU_DEVICES}\"")
+  fi
+  
+  # Memory and performance
+  args+=("--shm-size=16g")
+  args+=("--ulimit" "memlock=-1")
+  args+=("--ulimit" "stack=67108864")
+  
+  # Resource limits
+  if [ -n "$MEMORY_LIMIT" ]; then
+    args+=("--memory" "$MEMORY_LIMIT")
+    vlog "Memory limit: $MEMORY_LIMIT"
+  fi
+  if [ -n "$CPU_LIMIT" ]; then
+    args+=("--cpus" "$CPU_LIMIT")
+    vlog "CPU limit: $CPU_LIMIT"
+  fi
+  
+  # Port forwarding
+  if [ -n "$PORTS" ]; then
+    IFS=',' read -ra PORT_ARRAY <<< "$PORTS"
+    for port in "${PORT_ARRAY[@]}"; do
+      args+=("-p" "$port")
+      vlog "Forwarding port: $port"
+    done
+  fi
+  
+  # Environment file
+  if [ -n "$ENV_FILE" ]; then
+    if [ -f "$ENV_FILE" ]; then
+      args+=("--env-file" "$ENV_FILE")
+      vlog "Using env file: $ENV_FILE"
+    else
+      warn "Environment file not found: $ENV_FILE"
+    fi
+  fi
+  
+  # User mapping (avoid running as root)
+  if [ "$RUN_AS_USER" = true ]; then
+    args+=("--user" "$(id -u):$(id -g)")
+    vlog "Running as user: $(id -u):$(id -g)"
+  fi
+  
+  # Volume mount
+  args+=("-v" "$WORKDIR:/workspace")
+  args+=("-w" "/workspace")
+  
+  # Image and command
+  args+=("$IMAGE")
+  args+=("sleep" "infinity")
+  
+  echo "${args[@]}"
+}
+
+# -----------------------------
+# Install requirements
+# -----------------------------
+install_requirements() {
+  if [ -z "$REQUIREMENTS_PATH" ]; then
+    return 0
+  fi
+  
+  local rel_path
+  rel_path="$(realpath --relative-to="$WORKDIR" "$REQUIREMENTS_PATH")"
+  
+  # Check if already installed (unless force flag is set)
+  if [ "$FORCE_REQUIREMENTS" = false ] && [ -f "$REQUIREMENTS_MARKER" ]; then
+    local marker_content
+    marker_content="$(cat "$REQUIREMENTS_MARKER")"
+    local current_hash
+    current_hash="$(md5sum "$REQUIREMENTS_PATH" | cut -d' ' -f1)"
+    
+    if [ "$marker_content" = "$current_hash" ]; then
+      info "Requirements already installed (use --force-requirements to reinstall)"
+      return 0
+    fi
+  fi
+  
+  log "▶ Installing requirements from: $rel_path"
+  
+  if docker exec "$CONTAINER_NAME" bash -c \
+    "pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r '/workspace/$rel_path'" >> "$LOG_FILE" 2>&1; then
+    # Mark as installed with hash
+    md5sum "$REQUIREMENTS_PATH" | cut -d' ' -f1 > "$REQUIREMENTS_MARKER"
+    success "Requirements installed"
+  else
+    die "Failed to install requirements. Check logs: ngc logs"
+  fi
+}
+
+# -----------------------------
+# Commands
+# -----------------------------
+cmd_up() {
+  check_docker
+  check_gpu
+  check_requirements_file
+  
+  # Check NGC authentication if needed
+  if ! check_ngc_auth; then
+    die "NGC authentication required for private images"
+  fi
+  
+  vlog "Configuration:"
+  vlog "  Image: $IMAGE"
+  vlog "  Container: $CONTAINER_NAME"
+  vlog "  Workdir: $WORKDIR"
+  vlog "  GPUs: $GPU_DEVICES"
+  
+  local status
+  status="$(get_container_status)"
+  
+  case "$status" in
+    running)
+      info "Container already running"
+      ;;
+    stopped)
+      log "▶ Starting existing container"
+      docker start "$CONTAINER_NAME" >> "$LOG_FILE" 2>&1
+      success "Container started"
+      ;;
+    absent)
+      log "▶ Creating container: $CONTAINER_NAME"
+      local docker_args
+      docker_args="$(build_docker_args)"
+      
+      if eval docker run $docker_args >> "$LOG_FILE" 2>&1; then
+        success "Container created and started"
+      else
+        die "Failed to create container. Check logs: ngc logs"
+      fi
+      ;;
+  esac
+  
+  # Wait for container to be ready
+  sleep 1
+  
+  # Install requirements if specified
+  install_requirements
+  
+  success "Environment ready"
+  if [ -n "$PORTS" ]; then
+    info "Ports forwarded: $PORTS"
+  fi
+  info "Enter with: ngc exec"
+}
+
+cmd_exec() {
+  check_docker
+  
+  if ! container_running; then
+    die "Container not running. Start with: ngc up"
+  fi
+  
+  if [ -n "$EXEC_CMD" ]; then
+    # Execute specific command
+    vlog "Executing command: $EXEC_CMD"
+    docker exec -it "$CONTAINER_NAME" bash -c "$EXEC_CMD"
+  else
+    # Interactive bash
+    docker exec -it "$CONTAINER_NAME" bash
+  fi
+}
+
+cmd_down() {
+  check_docker
+  
+  if container_running; then
+    log "■ Stopping container"
+    docker stop "$CONTAINER_NAME" >> "$LOG_FILE" 2>&1
+    success "Container stopped"
+  else
+    info "Container not running"
+  fi
+}
+
+cmd_rm() {
+  check_docker
+  
+  if container_exists; then
+    log "✖ Removing container (your code on host is safe)"
+    docker rm -f "$CONTAINER_NAME" >> "$LOG_FILE" 2>&1
+    
+    # Clean up markers
+    rm -f "$REQUIREMENTS_MARKER"
+    
+    success "Container removed"
+  else
+    info "Container does not exist"
+  fi
+}
+
+cmd_restart() {
+  cmd_down
+  sleep 1
+  cmd_up
+}
+
+cmd_logs() {
+  if [ -f "$LOG_FILE" ]; then
+    cat "$LOG_FILE"
+  else
+    info "No logs found"
+  fi
+}
+
+cmd_status() {
+  local status
+  status="$(get_container_status)"
+  
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "Container: $CONTAINER_NAME"
+  echo "Status: $status"
+  echo "Workdir: $WORKDIR"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  
+  if container_exists; then
+    echo ""
+    docker ps -a --filter "name=${CONTAINER_NAME}" --format "table {{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+    
+    if container_running; then
+      echo ""
+      echo "GPU Status:"
+      docker exec "$CONTAINER_NAME" nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total --format=csv 2>/dev/null || echo "  Unable to query GPUs"
+    fi
+  fi
+}
+
+cmd_list() {
+  info "NGC Containers Across All Projects"
+  echo ""
+  
+  local containers
+  containers=$(docker ps -a --filter "name=ngc-" --format "{{.Names}}" 2>/dev/null || true)
+  
+  if [ -z "$containers" ]; then
+    info "No NGC containers found"
+    return 0
+  fi
+  
+  # Header
+  printf "%-40s %-15s %-20s\n" "CONTAINER" "STATUS" "IMAGE"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  
+  # List containers
+  docker ps -a --filter "name=ngc-" --format "{{.Names}}\t{{.Status}}\t{{.Image}}" | while IFS=$'\t' read -r name status image; do
+    # Truncate long names/images
+    name_short="${name:0:39}"
+    image_short="${image:0:19}"
+    status_short="${status:0:14}"
+    
+    printf "%-40s %-15s %-20s\n" "$name_short" "$status_short" "$image_short"
+  done
+  
+  echo ""
+  local total
+  total=$(echo "$containers" | wc -l)
+  info "Total: $total containers"
+  echo ""
+  info "Tip: Use 'ngc clean --containers' to remove stopped containers"
+}
+
+cmd_jupyter() {
+  check_docker
+  
+  if ! container_running; then
+    die "Container not running. Start with: ngc up --port 8888:8888"
+  fi
+  
+  log "▶ Starting Jupyter Lab on port 8888"
+  docker exec -it "$CONTAINER_NAME" bash -c "jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root"
+}
+
+cmd_clean() {
+  local clean_logs=false
+  local clean_containers=false
+  local clean_images=false
+  
+  # Parse clean options
+  if [ $# -eq 0 ]; then
+    # Default: just logs
+    clean_logs=true
+  else
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --logs)
+          clean_logs=true
+          shift
+          ;;
+        --containers)
+          clean_containers=true
+          shift
+          ;;
+        --images)
+          clean_images=true
+          shift
+          ;;
+        --all)
+          clean_logs=true
+          clean_containers=true
+          clean_images=true
+          shift
+          ;;
+        *)
+          shift
+          ;;
+      esac
+    done
+  fi
+  
+  log "▶ Cleaning NGC artifacts"
+  echo ""
+  
+  # Clean logs
+  if [ "$clean_logs" = true ]; then
+    if [ -d "$LOG_DIR" ]; then
+      rm -rf "$LOG_DIR"
+      success "Cleaned logs: $LOG_DIR"
+    else
+      info "No logs to clean"
+    fi
+  fi
+  
+  # Clean old containers
+  if [ "$clean_containers" = true ]; then
+    echo ""
+    info "Searching for stopped NGC containers..."
+    local stopped_containers
+    stopped_containers=$(docker ps -a --filter "name=ngc-" --filter "status=exited" --format "{{.Names}}" 2>/dev/null || true)
+    
+    if [ -n "$stopped_containers" ]; then
+      echo ""
+      echo "Stopped containers found:"
+      echo "$stopped_containers" | while read -r container; do
+        echo "  - $container"
+      done
+      echo ""
+      read -p "Remove these containers? [y/N] " -n 1 -r
+      echo
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "$stopped_containers" | while read -r container; do
+          docker rm "$container" >/dev/null 2>&1
+          success "Removed: $container"
+        done
+      else
+        info "Skipped container cleanup"
+      fi
+    else
+      info "No stopped NGC containers found"
+    fi
+  fi
+  
+  # Clean dangling images
+  if [ "$clean_images" = true ]; then
+    echo ""
+    read -p "Remove dangling Docker images? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      docker image prune -f
+      success "Cleaned dangling images"
+    else
+      info "Skipped image cleanup"
+    fi
+  fi
+  
+  echo ""
+  success "Cleanup complete"
+}
+
+cmd_version() {
+  echo "NGC Container Manager v${VERSION}"
+  echo "Copyright (c) 2025"
+  echo ""
+  echo "Check for updates: https://github.com/your-username/ngc-manager"
+}
+
+cmd_login() {
+  log "▶ NGC Authentication Setup"
+  echo ""
+  
+  info "NVIDIA NGC allows you to access private container images and models"
+  info "You'll need an NGC API key from: https://ngc.nvidia.com/setup/api-key"
+  echo ""
+  
+  # Prompt for API key
+  read -p "Enter your NGC API Key: " -s api_key
+  echo ""
+  
+  if [ -z "$api_key" ]; then
+    die "API key cannot be empty"
+  fi
+  
+  log "▶ Logging into $NGC_REGISTRY..."
+  
+  # Login to Docker registry
+  if echo "$api_key" | docker login "$NGC_REGISTRY" --username '$oauthtoken' --password-stdin >> "$LOG_FILE" 2>&1; then
+    success "Successfully logged into $NGC_REGISTRY"
+    
+    # Save credentials to NGC config
+    save_ngc_credentials "$api_key"
+    
+    echo ""
+    success "NGC authentication complete!"
+    info "You can now pull private images from $NGC_REGISTRY"
+    echo ""
+    info "Example: ngc up --image nvcr.io/your-org/your-image:tag"
+  else
+    die "Login failed. Please check your API key and try again."
+  fi
+}
+
+cmd_logout() {
+  log "▶ Logging out of NGC"
+  
+  # Logout from Docker registry
+  if docker logout "$NGC_REGISTRY" >> "$LOG_FILE" 2>&1; then
+    success "Logged out of $NGC_REGISTRY"
+  fi
+  
+  # Remove saved credentials
+  if [ -f "$NGC_CONFIG_FILE" ]; then
+    rm -f "$NGC_CONFIG_FILE"
+    success "Removed NGC credentials"
+  fi
+  
+  echo ""
+  info "You'll need to run 'ngc login' again to access private images"
+}
+
+cmd_help() {
+  cat <<EOF
+NGC Container Manager - GPU Development Environment
+
+USAGE:
+  ngc <command> [options]
+
+COMMANDS:
+  login       Authenticate with NGC for private images
+  logout      Remove NGC authentication
+  up          Create/start container
+  exec        Open interactive shell (or run command with -c)
+  down        Stop container
+  restart     Restart container
+  rm          Remove container (keeps your code safe)
+  status      Show container status and GPU info
+  list        List all NGC containers across projects
+  jupyter     Start Jupyter Lab on port 8888
+  logs        View debug logs
+  clean       Remove NGC artifacts
+  version     Show version information
+  help        Show this help
+
+OPTIONS (for 'up' command):
+  --image <name>              Docker image (default: $DEFAULT_IMAGE)
+  --requirements <path>       Install Python requirements from file
+  --force-requirements        Force reinstall requirements
+  --port <mapping>            Port forwarding (e.g., "8888:8888,6006:6006")
+  --gpu <devices>             GPU devices (e.g., "0,1" or "all", default: all)
+  --env-file <path>           Environment variables file
+  --memory <limit>            Memory limit (e.g., "16g")
+  --cpus <limit>              CPU limit (e.g., "4.0")
+  --no-user-mapping           Run as root instead of current user
+  --verbose                   Enable verbose output
+
+OPTIONS (for 'exec' command):
+  -c <command>                Execute command instead of interactive shell
+
+EXAMPLES:
+  # First time setup - authenticate with NGC
+  ngc login
+
+  # Basic setup
+  ngc up
+  ngc exec
+
+  # Full setup with Jupyter
+  ngc up --requirements requirements.txt --port 8888:8888,6006:6006 --verbose
+  ngc jupyter
+
+  # Use private NGC image
+  ngc up --image nvcr.io/your-org/your-private-image:latest
+
+  # Run specific command
+  ngc exec -c "python train.py --epochs 10"
+
+  # Use specific GPUs
+  ngc up --gpu 0,1
+
+  # Development workflow
+  ngc up --env-file .env --port 8888:8888
+  ngc exec
+  # ... do work ...
+  ngc down
+
+  # Clean old containers
+  ngc clean --containers
+
+  # Full cleanup
+  ngc clean --all
+
+  # Clean restart
+  ngc rm
+  ngc up --force-requirements
+
+CLEAN OPTIONS:
+  --logs              Remove log files (default)
+  --containers        Remove stopped NGC containers
+  --images            Remove dangling Docker images
+  --all               Clean everything
+
+NOTES:
+  • Your code stays on the host (bind-mounted to /workspace)
+  • Container name includes directory hash to prevent collisions
+  • Requirements are cached (reinstalled only if file changes)
+  • Logs stored in: $LOG_DIR/ngc.log
+  • Container auto-restarts unless explicitly stopped
+
+EOF
+}
+
+# -----------------------------
+# Main
+# -----------------------------
+command="${1:-help}"
+shift || true
+
+# Special handling for clean command - save its options
+clean_args=()
+if [ "$command" = "clean" ]; then
+  clean_args=("$@")
+  # Don't parse these as global options
+  set --
+fi
+
+# Parse options
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --image)
+      IMAGE="$2"
+      shift 2
+      ;;
+    --requirements)
+      REQUIREMENTS_PATH="$2"
+      shift 2
+      ;;
+    --force-requirements)
+      FORCE_REQUIREMENTS=true
+      shift
+      ;;
+    --port)
+      PORTS="$2"
+      shift 2
+      ;;
+    --gpu)
+      GPU_DEVICES="$2"
+      shift 2
+      ;;
+    --env-file)
+      ENV_FILE="$2"
+      shift 2
+      ;;
+    --memory)
+      MEMORY_LIMIT="$2"
+      shift 2
+      ;;
+    --cpus)
+      CPU_LIMIT="$2"
+      shift 2
+      ;;
+    --no-user-mapping)
+      RUN_AS_USER=false
+      shift
+      ;;
+    --verbose)
+      VERBOSE=true
+      shift
+      ;;
+    -c)
+      EXEC_CMD="$2"
+      shift 2
+      ;;
+    *)
+      die "Unknown option: $1. Use 'ngc help' for usage."
+      ;;
+  esac
+done
+
+# Execute command
+case "$command" in
+  login)    cmd_login ;;
+  logout)   cmd_logout ;;
+  up)       cmd_up ;;
+  exec)     cmd_exec ;;
+  down)     cmd_down ;;
+  restart)  cmd_restart ;;
+  rm)       cmd_rm ;;
+  logs)     cmd_logs ;;
+  status)   cmd_status ;;
+  list)     cmd_list ;;
+  jupyter)  cmd_jupyter ;;
+  clean)    cmd_clean "${clean_args[@]}" ;;
+  version|--version|-v)  cmd_version ;;
+  help|--help|-h)  cmd_help ;;
+  *)
+    die "Unknown command: $command. Use 'ngc help' for usage."
+    ;;
+esac
