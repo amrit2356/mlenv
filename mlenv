@@ -280,10 +280,16 @@ INIT_SCRIPT
 # Create devcontainer config for VS Code integration
 # -----------------------------
 create_devcontainer_config() {
-  local devcontainer_file="$LOG_DIR/devcontainer.json"
+  local devcontainer_dir="$WORKDIR/.devcontainer"
+  local devcontainer_file="$devcontainer_dir/devcontainer.json"
+  local backup_file="$LOG_DIR/devcontainer.json"
   
-  # Always regenerate to ensure it's up to date
-  cat > "$devcontainer_file" <<'DEVCONTAINER_JSON'
+  # Create .devcontainer directory
+  mkdir -p "$devcontainer_dir"
+  
+  # Generate devcontainer.json content
+  local config_content
+  config_content=$(cat <<'DEVCONTAINER_JSON'
 {
     "name": "MLEnv GPU Container",
     "workspaceFolder": "/workspace",
@@ -329,6 +335,13 @@ create_devcontainer_config() {
     }
 }
 DEVCONTAINER_JSON
+)
+  
+  # Write to .devcontainer/ (where VS Code expects it)
+  echo "$config_content" > "$devcontainer_file"
+  
+  # Also backup to .mlenv/
+  echo "$config_content" > "$backup_file"
   
   vlog "Created devcontainer config: $devcontainer_file"
 }
@@ -388,7 +401,7 @@ build_docker_args() {
   # Dev Container labels (for VS Code integration)
   args+=("--label" "devcontainer.local_folder=$WORKDIR")
   args+=("--label" "com.microsoft.devcontainers.workspaceFolder=/workspace")
-  args+=("--label" "devcontainer.config_file=$LOG_DIR/devcontainer.json")
+  args+=("--label" "devcontainer.config_file=$WORKDIR/.devcontainer/devcontainer.json")
   vlog "Added Dev Container labels for VS Code integration"
   
   # User mapping (avoid running as root)
