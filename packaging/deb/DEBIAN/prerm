@@ -1,0 +1,11 @@
+#!/bin/bash
+# MLEnv pre-removal script
+
+set -e
+
+echo "Removing MLEnv..."
+
+# Stop any monitoring services if running
+# (Future: if we add systemd services)
+
+exit 0

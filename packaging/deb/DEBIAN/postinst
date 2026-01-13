@@ -1,0 +1,46 @@
+#!/bin/bash
+# MLEnv post-installation script
+
+set -e
+
+echo "Setting up MLEnv..."
+
+# Create necessary directories
+mkdir -p /var/mlenv/registry
+mkdir -p /var/mlenv/cache
+mkdir -p /var/mlenv/plugins
+
+# Set proper permissions
+chmod 755 /usr/local/bin/mlenv
+chmod 755 /usr/local/lib/mlenv/core/*.sh
+chmod 755 /usr/local/lib/mlenv/adapters/*/*.sh
+
+# Initialize database
+if [ -f /usr/local/lib/mlenv/database/init.sh ]; then
+    export MLENV_LIB=/usr/local/lib/mlenv
+    export MLENV_VAR=/var/mlenv
+    source /usr/local/lib/mlenv/utils/logging.sh
+    source /usr/local/lib/mlenv/database/init.sh
+    
+    # Initialize database silently
+    db_init >/dev/null 2>&1 || true
+fi
+
+# Install bash completion if available
+if [ -d /usr/share/bash-completion/completions ]; then
+    if [ -f /usr/local/share/mlenv/completions/bash/mlenv ]; then
+        cp /usr/local/share/mlenv/completions/bash/mlenv /usr/share/bash-completion/completions/mlenv
+    fi
+fi
+
+echo "MLEnv installed successfully!"
+echo ""
+echo "Quick start:"
+echo "  1. Verify installation: mlenv version"
+echo "  2. Check prerequisites: docker info"
+echo "  3. Create project: mlenv init --template pytorch my-project"
+echo "  4. Start container: mlenv up"
+echo ""
+echo "Documentation: mlenv help"
+
+exit 0

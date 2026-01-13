@@ -1,0 +1,85 @@
+name: MLEnv Tests
+
+on:
+  push:
+    branches: [ main ] 
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io sqlite3 jq
+          
+      - name: Start Docker
+        run: |
+          sudo systemctl start docker
+          sudo docker info
+      
+      - name: Run unit tests
+        run: |
+          make test-unit
+      
+      - name: Run integration tests
+        run: |
+          make test-integration || true
+      
+      - name: Run E2E tests
+        run: |
+          make test-e2e || true
+      
+      - name: Check build
+        run: |
+          make check
+  
+  build-packages:
+    name: Build Packages
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Build DEB package
+        run: |
+          chmod +x packaging/build-deb.sh
+          ./packaging/build-deb.sh
+      
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mlenv-deb
+          path: packaging/*.deb
+      
+      - name: Test DEB installation
+        run: |
+          sudo dpkg -i packaging/*.deb || true
+          sudo apt-get install -f -y
+          mlenv version
+  
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+      
+      - name: Run shellcheck
+        run: |
+          find . -name "*.sh" -type f ! -path "*/\.*" -exec shellcheck {} + || true

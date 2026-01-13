@@ -1,70 +1,169 @@
 # MLEnv - ML Environment Manager
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
 ![NVIDIA](https://img.shields.io/badge/NVIDIA-GPU-76B900?logo=nvidia)
 ![Docker](https://img.shields.io/badge/Docker-20.10+-2496ED?logo=docker&logoColor=white)
-![Bash](https://img.shields.io/badge/Bash-4EAA25?logo=gnubash&logoColor=white)
-![CUDA](https://img.shields.io/badge/CUDA-Enabled-76B900)
-![VS Code](https://img.shields.io/badge/VS%20Code-Dev%20Containers-007ACC?logo=visualstudiocode)
 
-**Production-Ready GPU Container Management**
+**Production-Grade GPU Container Management Platform**
 
-A production-grade command-line tool for managing NVIDIA GPU-accelerated Docker containers for deep learning and scientific computing. Simplifies the workflow of running PyTorch, TensorFlow, and other GPU workloads while keeping your code safely on the host machine.
+MLEnv is an enterprise-grade command-line tool for managing NVIDIA GPU-accelerated Docker containers for deep learning and scientific computing. Built with hexagonal architecture, featuring intelligent GPU allocation, crash prevention, and professional packaging.
 
-## 🚀 Features
+📖 **[Full Documentation](docs/index.md)** | 🚀 **[Getting Started](docs/guides/getting-started.md)** | 📦 **[Deployment Guide](docs/guides/deployment.md)**
 
-- **Zero-Config GPU Access** - Automatic NVIDIA GPU detection and passthrough
-- **VS Code Dev Containers** - Auto-generated config for seamless VS Code integration
-- **Smart Jupyter** - `mlenv jupyter` auto-creates containers with port forwarding
-- **Smart Requirements Management** - Hash-based caching prevents redundant pip installs
-- **Persistent Workspaces** - Your code stays on the host (bind-mounted)
-- **Port Forwarding** - Easy access to Jupyter, TensorBoard, APIs
-- **Resource Controls** - Limit CPU, memory, and GPU usage
-- **Multi-Project Support** - Unique container names prevent collisions
-- **User Mapping** - Run as your user, not root (no permission issues)
-- **One-Line Commands** - `mlenv jupyter`, `mlenv exec -c "train.py"`
-- **Auto-Restart** - Containers survive system reboots
+---
+
+## 🌟 What's New in v2.0.0
+
+### Architecture & Quality
+- **Hexagonal Architecture** - Modular, maintainable codebase with Ports & Adapters pattern
+- **70+ Modular Files** - Professional code organization across core, adapters, and utilities
+- **SQLite Backend** - Persistent state tracking with 9 tables + 2 views
+- **25+ Automated Tests** - Unit, integration, and E2E test coverage
+- **100% Backward Compatible** - All v1.x commands work seamlessly
+
+### Intelligent Features
+- **🛡️ Admission Control** - Prevents system crashes by checking resources before container creation
+  - Memory usage < 85%, CPU < 90%, Available memory > 4GB
+  - Protects your system from resource exhaustion
+- **🤖 Auto GPU Detection** - `mlenv up --auto-gpu` intelligently selects free GPUs
+- **📊 Resource Monitoring** - Real-time CPU, memory, GPU tracking with historical metrics
+- **🏥 Health Checks** - Automatic container health monitoring with alerts
+
+### Developer Experience
+- **Project Templates** - Quick-start with `mlenv init --template pytorch|minimal`
+- **Config File Support** - `~/.mlenvrc` for persistent defaults
+- **NGC Catalog** - Browse and manage NVIDIA container images
+- **Enhanced Commands** - `mlenv list`, improved `mlenv clean`, better `mlenv status`
+
+### Enterprise Features
+- **Linux Packages** - Production-ready DEB and RPM packages
+- **Professional Installer** - Prerequisite checking, completions, uninstall support
+- **CI/CD Integration** - GitHub Actions workflows for testing and releases
+- **Comprehensive Docs** - 10+ guides covering installation to production deployment
+
+See [**CHANGELOG.md**](.github/CHANGELOG.md) for complete release notes.
+
+---
+
+## ⚡ Quick Start
+
+```bash
+# Install
+sudo ./install.sh
+
+# Create a PyTorch project
+mlenv init --template pytorch my-project
+cd my-project
+
+# Start with auto GPU detection
+mlenv up --auto-gpu
+
+# Enter container
+mlenv exec
+
+# Start Jupyter Lab
+mlenv jupyter
+```
+
+**[→ Complete Getting Started Guide](docs/guides/getting-started.md)**
+
+## 🎯 Key Features
+
+### Core Capabilities
+- ✅ **Zero-config GPU access** - Automatic NVIDIA GPU detection and passthrough
+- ✅ **Smart GPU allocation** - Auto-detect free GPUs with `--auto-gpu`
+- ✅ **VS Code Dev Containers** - Auto-generated `.devcontainer/devcontainer.json`
+- ✅ **Smart Jupyter** - One-command Jupyter Lab with auto port forwarding
+- ✅ **Requirements caching** - Hash-based caching prevents redundant installs
+- ✅ **Persistent workspaces** - Code stays on host (bind-mounted)
+- ✅ **Port forwarding** - Easy access to Jupyter, TensorBoard, APIs
+- ✅ **User mapping** - Run as your user, not root (no permission issues)
+
+### Safety & Monitoring
+- 🛡️ **Admission control** - System crash prevention
+- 📊 **Real-time monitoring** - CPU, memory, GPU utilization
+- 🏥 **Health checks** - Container lifecycle tracking
+- 📈 **Historical metrics** - Resource usage over time
+- 🚨 **Project quotas** - Limit resources per project
+
+### Developer Tools
+- 🎨 **Project templates** - PyTorch, Minimal (more coming)
+- ⚙️ **Config files** - `~/.mlenvrc` for defaults, project-level `.mlenvrc`
+- 🐳 **NGC catalog** - Browse and search NVIDIA container images
+- 🔍 **Enhanced status** - Container and GPU info at a glance
+- 🧹 **Smart cleanup** - Interactive cleanup with `mlenv clean`
 
 ## 📋 Prerequisites
 
 - **Docker** (version 20.10+)
-- **NVIDIA GPU** with compatible drivers
+- **sqlite3** (version 3.0+)
+- **bash** (version 4.0+)
+- **NVIDIA GPU** with compatible drivers (optional but recommended)
 - **NVIDIA Container Toolkit** ([installation guide](https://github.com/NVIDIA/nvidia-container-toolkit))
 
-Verify your setup:
+**Verify your setup:**
 ```bash
+docker --version
+sqlite3 --version
+nvidia-smi
 docker run --rm --gpus all nvidia/cuda:12.0.0-base-ubuntu22.04 nvidia-smi
 ```
 
 ## 🔧 Installation
 
-### Automatic Installation (Recommended)
+### Method 1: Install Script (Recommended)
+
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/mlenv.git
+# Clone repository
+git clone https://github.com/amrit2356/mlenv.git
 cd mlenv
 
-# Run installer (checks prerequisites, installs script + completions)
+# Run installer
 sudo ./install.sh
 
 # Verify installation
-mlenv help
+mlenv version
 ```
 
 The installer will:
-- ✅ Check Docker and NVIDIA Container Toolkit
-- ✅ Install NGC to `/usr/local/bin`
+- ✅ Check Docker, SQLite, and NVIDIA Container Toolkit
+- ✅ Install mlenv to `/usr/local/bin`
 - ✅ Install shell completions (bash/zsh/fish)
+- ✅ Initialize SQLite database
 - ✅ Test GPU access
 
+### Method 2: Package Managers
+
+```bash
+# Debian/Ubuntu
+sudo dpkg -i mlenv_2.0.0_amd64.deb
+
+# RHEL/CentOS/Fedora
+sudo rpm -ivh mlenv-2.0.0-1.x86_64.rpm
+```
+
+### Method 3: Manual Installation
+
+```bash
+# Make executable
+chmod +x bin/mlenv
+
+# Copy to system directory
+sudo cp bin/mlenv /usr/local/bin/
+
+# Initialize database
+mlenv init
+```
+
 ### Installation Options
+
 ```bash
 # Check prerequisites without installing
 ./install.sh --check
 
-# Install to custom directory (no sudo needed)
+# Install to custom directory
 ./install.sh --install-dir ~/.local/bin
 
 # Force reinstall
@@ -74,797 +173,202 @@ sudo ./install.sh --force
 sudo ./install.sh --uninstall
 ```
 
-### Manual Installation
+**[→ Complete Installation Guide](docs/guides/getting-started.md#installation)**
+
+## 📚 Documentation
+
+### Essential Guides
+- 🚀 **[Getting Started](docs/guides/getting-started.md)** - Installation and first container
+- 📖 **[User Guide](docs/guides/user-guide.md)** - Complete feature documentation
+- 📦 **[Deployment Guide](docs/guides/deployment.md)** - Production deployment
+- 🔄 **[Migration Guide](docs/guides/migration.md)** - Upgrading from v1.x
+
+### Reference
+- ⚙️ **[Configuration Reference](docs/reference/configuration.md)** - All config options
+- 🎨 **[Template Reference](docs/reference/templates.md)** - Project template system
+- 📋 **[CLI Reference](docs/reference/cli.md)** - All commands
+- 🔍 **[Quick Reference](docs/reference/quickref.md)** - Cheat sheet
+
+### Development
+- 🏗️ **[Architecture Overview](docs/development/phase1-architecture.md)** - Hexagonal design
+- 🛡️ **[Safety Systems](docs/development/phase2-safety.md)** - Admission control
+- 🎨 **[Templates](docs/development/phase3-templates.md)** - Template engine
+- 🧪 **[Testing Guide](docs/development/phase5-testing.md)** - Test framework
+
+## 💻 Basic Usage
+
 ```bash
-# Download and make executable
-chmod +x ngc
+# Start a container with auto GPU detection
+mlenv up --auto-gpu
 
-# Copy to system directory
-sudo cp ngc /usr/local/bin/
-
-# Or use without sudo (add to PATH)
-mkdir -p ~/.local/bin
-cp ngc ~/.local/bin/
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-## ⚡ Quick Start
-
-### Basic Usage
-```bash
-# Start a container
-mlenv up
+# Or start with specific options
+mlenv up --requirements requirements.txt --port 8888:8888 --gpu 0,1
 
 # Enter interactive shell
 mlenv exec
 
-# Run your code (inside container)
-python train.py
+# Run a command
+mlenv exec -c "python train.py"
 
-# Exit (Ctrl+D or type 'exit')
-# Container keeps running in background
+# Start Jupyter Lab (auto-creates container if needed)
+mlenv jupyter
 
-# Stop when done
+# Check status
+mlenv status
+
+# List all containers
+mlenv list
+
+# Stop container
 mlenv down
-```
 
-### For Private NGC Images
-If you need private container images from NGC:
-
-```bash
-# 1. Get API key from https://ngc.nvidia.com/setup/api-key
-
-# 2. Authenticate
-mlenv login
-
-# 3. Use private images
-mlenv up --image nvcr.io/your-org/your-private-image:latest
-```
-
-**Note:** Public images like `nvcr.io/nvidia/pytorch:25.12-py3` don't require authentication.
-
-### With Jupyter Lab
-```bash
-# Simple - auto-creates container with port forwarding
-mlenv jupyter
-
-# Or with manual setup
-mlenv up --port 8888:8888
-mlenv jupyter
-
-# Open the URL shown in terminal
-# http://localhost:8888/...
-```
-
-### With VS Code Dev Containers
-```bash
-# Start container (creates .devcontainer/devcontainer.json automatically)
-mlenv up --port 8888:8888
-
-# In VS Code:
-# 1. Install "Dev Containers" extension
-# 2. Ctrl+Shift+P → "Dev Containers: Open Folder in Container"
-# 3. Select your project folder
-# 4. VS Code opens in /workspace with GPU access!
-
-# Benefits:
-# - Python IntelliSense works with container packages
-# - Jupyter notebooks run in container kernel
-# - Integrated terminal runs inside container
-# - All extensions auto-installed
-```
-
-### With Requirements
-```bash
-# requirements.txt
-# torch==2.1.0
-# transformers==4.35.0
-# jupyter==1.0.0
-
-mlenv up --requirements requirements.txt --port 8888:8888
-mlenv exec
-```
-
-## 📚 Usage
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `mlenv up` | Create/start container |
-| `mlenv exec` | Open interactive shell |
-| `mlenv down` | Stop container |
-| `mlenv restart` | Restart container |
-| `mlenv rm` | Remove container (keeps code) |
-| `mlenv status` | Show container and GPU status |
-| `mlenv jupyter` | Start Jupyter Lab (auto-creates container with ports) |
-| `mlenv logs` | View debug logs |
-| `mlenv clean` | Remove NGC artifacts |
-| `mlenv help` | Show detailed help |
-
-### Options for `mlenv up`
-
-```bash
-mlenv up [OPTIONS]
-
-Options:
-  --image <name>              Docker image (default: nvcr.io/nvidia/pytorch:25.12-py3)
-  --requirements <file>       Install Python packages from file
-  --force-requirements        Force reinstall even if cached
-  --port <mapping>            Port forwarding (e.g., "8888:8888" or "8888:8888,6006:6006")
-  --gpu <devices>             GPU devices (e.g., "0,1" or "all", default: all)
-  --env-file <file>           Load environment variables from file
-  --memory <limit>            Memory limit (e.g., "16g", "32g")
-  --cpus <limit>              CPU limit (e.g., "4.0", "8.0")
-  --no-user-mapping           Run as root instead of current user
-  --verbose                   Enable verbose output
-```
-
-### Options for `mlenv exec`
-
-```bash
-mlenv exec [-c <command>]
-
-Options:
-  -c <command>                Execute command instead of interactive shell
-
-Examples:
-  mlenv exec                            # Interactive shell
-  mlenv exec -c "python train.py"       # Run training script
-  mlenv exec -c "pip list | grep torch" # Check installed packages
-```
-
-## 💡 Examples
-
-### Example 1: PyTorch Deep Learning
-```bash
-# requirements.txt
-torch==2.1.0
-torchvision==0.16.0
-tensorboard==2.15.0
-wandb==0.16.0
-
-# .env
-WANDB_API_KEY=your_api_key_here
-CUDA_VISIBLE_DEVICES=0,1
-
-# Setup environment
-mlenv up \
-  --requirements requirements.txt \
-  --env-file .env \
-  --port 6006:6006 \
-  --gpu 0,1 \
-  --memory 32g
-
-# Start training
-mlenv exec -c "python train.py --batch-size 64 --epochs 100"
-
-# Monitor with TensorBoard (in another terminal)
-mlenv exec -c "tensorboard --logdir runs --host 0.0.0.0"
-# Open: http://localhost:6006
-```
-
-### Example 2: Jupyter Notebook Development
-```bash
-# Start container with Jupyter port
-mlenv up --requirements requirements.txt --port 8888:8888
-
-# Launch Jupyter Lab
-mlenv jupyter
-
-# Open the provided URL in your browser
-# Notebooks saved in /workspace are automatically synced to host
-```
-
-### Example 3: Distributed Training (Multi-GPU)
-```bash
-# Use all available GPUs
-mlenv up --requirements requirements.txt --gpu all
-
-# Run distributed training
-mlenv exec -c "torchrun --nproc_per_node=4 train_ddp.py --config config.yaml"
-```
-
-### Example 4: Model Inference API
-```bash
-# requirements.txt
-fastapi==0.104.0
-uvicorn==0.24.0
-torch==2.1.0
-transformers==4.35.0
-
-# Start with API port
-mlenv up --requirements requirements.txt --port 8000:8000 --gpu 0
-
-# Run FastAPI server
-mlenv exec -c "uvicorn app:app --host 0.0.0.0 --port 8000"
-
-# API available at http://localhost:8000
-```
-
-### Example 5: Data Processing (CPU-Heavy)
-```bash
-# requirements.txt
-pandas==2.1.0
-polars==0.19.0
-dask==2023.10.0
-
-# High CPU/memory, no GPU needed
-mlenv up \
-  --requirements requirements.txt \
-  --memory 64g \
-  --cpus 16.0 \
-  --gpu 0  # Use only one GPU or none
-
-# Process large dataset
-mlenv exec -c "python process_data.py --input data/raw --output data/processed"
-```
-
-### Example 6: Custom Image (TensorFlow)
-```bash
-# Use TensorFlow image instead of PyTorch
-mlenv up \
-  --image nvcr.io/nvidia/tensorflow:24.12-tf2-py3 \
-  --requirements requirements.txt \
-  --port 8888:8888
-
-mlenv exec
-```
-
-## 🔐 NGC Authentication
-
-### When Do You Need It?
-
-**Public Images** - No authentication needed:
-- `nvcr.io/nvidia/pytorch:*`
-- `nvcr.io/nvidia/tensorflow:*`
-- `nvcr.io/nvidia/cuda:*`
-
-**Private Images** - Authentication required:
-- `nvcr.io/your-org/your-private-model:*`
-- Organization-specific images
-- Enterprise NGC images
-
-### Setup Authentication
-
-```bash
-# 1. Get your NGC API Key
-# Visit: https://ngc.nvidia.com/setup/api-key
-# Click "Generate API Key"
-
-# 2. Login to NGC
-mlenv login
-# Paste your API key when prompted
-
-# 3. Verify authentication
-docker info | grep nvcr.io
-# Should show: Username: $oauthtoken
-
-# 4. Use private images
-mlenv up --image nvcr.io/your-org/private-model:latest
-```
-
-### What Gets Stored?
-
-```bash
-~/.mlenv/config           # NGC API key
-~/.docker/config.json   # Docker registry credentials
-```
-
-### Logout
-
-```bash
-mlenv logout
-# Removes NGC credentials and Docker login
-```
-
-### Troubleshooting
-
-**"unauthorized: authentication required"**
-```bash
-# Not logged in, run:
-mlenv login
-```
-
-**"Error response from daemon: Get https://nvcr.io/v2/: unauthorized"**
-```bash
-# Expired/invalid API key
-mlenv logout
-mlenv login  # Enter new key
-```
-
-**Check if logged in:**
-```bash
-cat ~/.mlenv/config
-# or
-docker info | grep nvcr.io
-```
-
-## 🔍 How It Works
-
-### Architecture
-```
-Host Machine                    Docker Container
-┌─────────────────┐            ┌─────────────────┐
-│  /your/project  │◄──bind────►│   /workspace    │
-│                 │   mount    │                 │
-│  ├── train.py   │            │  ├── train.py   │
-│  ├── data/      │            │  ├── data/      │
-│  └── .mlenv/    │            │  └── (GPUs)     │
-└─────────────────┘            └─────────────────┘
-        ▲                               │
-        └──────────────┬────────────────┘
-                       │
-                  localhost:8888
-```
-
-### Key Concepts
-
-1. **Bind Mounting**: Your project directory is mounted into the container at `/workspace`. Changes are immediately synced both ways.
-
-2. **Container Persistence**: Containers stay running in the background. Stop with `mlenv down`, remove with `mlenv rm`.
-
-3. **Smart Caching**: Requirements are hashed. Reinstalls only happen if the file changes (override with `--force-requirements`).
-
-4. **Unique Naming**: Container names include a directory hash (`ngc-myproject-a3f8c21d`) to prevent collisions across different project directories.
-
-5. **User Mapping**: By default, runs as your user (`uid:gid`) to avoid permission issues with created files.
-
-## 💻 VS Code Integration
-
-MLEnv automatically generates VS Code Dev Container configuration for seamless integration.
-
-### Quick Start with VS Code
-
-```bash
-# 1. Start your container
-mlenv jupyter  # or: mlenv up --port 8888:8888
-
-# 2. In VS Code, install "Dev Containers" extension
-
-# 3. Attach to container
-# Ctrl+Shift+P → "Dev Containers: Open Folder in Container"
-# Select your project directory
-
-# VS Code will:
-# ✅ Open in /workspace (your project files)
-# ✅ Auto-install Python, Jupyter, Pylance extensions
-# ✅ Configure Python interpreter from container
-# ✅ Enable GPU-accelerated development
-```
-
-### What Gets Auto-Configured
-
-When you create a container, MLEnv automatically generates `.devcontainer/devcontainer.json` with:
-
-- **Workspace Folder**: `/workspace` (auto-opens here)
-- **Remote User**: `ubuntu` (not root)
-- **Extensions**: Python, Jupyter, Pylance, Debugpy, Ruff
-- **Port Forwarding**: 8888 (Jupyter Lab), 6006 (TensorBoard)
-- **Settings**: Optimized for ML development
-
-### Features You Get
-
-```bash
-# IntelliSense with container packages
-# Works with transformers, torch, etc. installed in container
-
-# Jupyter notebooks
-# Use container's kernel directly in VS Code
-
-# Integrated terminal
-# Runs inside container with GPU access
-
-# Debugging
-# Debug Python code with container's interpreter
-
-# File sync
-# Changes sync automatically between host and container
-```
-
-### Manual Connection Setup
-
-If you prefer to connect to an existing Jupyter server:
-
-```bash
-# 1. Start Jupyter
-mlenv jupyter
-
-# 2. Copy the token URL (e.g., http://127.0.0.1:8888/lab?token=...)
-
-# 3. In VS Code:
-# - Open a .ipynb file
-# - Click "Select Kernel"
-# - Choose "Existing Jupyter Server"
-# - Paste the URL (change /lab to /?token=...)
-# - Select Python kernel
-```
-
-### Troubleshooting VS Code
-
-**Opens in /root instead of /workspace:**
-```bash
-# Ensure .devcontainer/devcontainer.json exists
-ls .devcontainer/devcontainer.json
-
-# If missing, recreate container
+# Remove container
 mlenv rm
-mlenv jupyter  # Auto-generates config
 ```
 
-**Extensions not installed:**
-```bash
-# Check devcontainer.json exists
-cat .devcontainer/devcontainer.json
+**[→ Complete Usage Guide](docs/guides/user-guide.md)**
 
-# Reload window: Ctrl+Shift+P → "Developer: Reload Window"
+## 🛠️ Advanced Features
+
+### Project Templates
+
+```bash
+# Create a PyTorch project
+mlenv init --template pytorch my-dl-project
+
+# Or a minimal project
+mlenv init --template minimal my-experiment
 ```
 
-**Files not syncing:**
-```bash
-# Verify you're in /workspace
-pwd  # Should show: /workspace
+### Config File
 
-# If in wrong directory:
-# File → Open Folder → /workspace
+Create `~/.mlenvrc` for global defaults:
+```bash
+DEFAULT_IMAGE=nvcr.io/nvidia/pytorch:25.12-py3
+DEFAULT_MEMORY=32g
+DEFAULT_GPUS=all
+AUTO_GPU=true
 ```
 
-## 🛠️ Advanced Usage
+Or project-specific `.mlenvrc` in your project directory.
 
-### Multiple Projects
-Each directory gets its own container:
+### NGC Catalog
+
 ```bash
-cd /projects/nlp-research
-mlenv up  # Creates: ngc-nlp-research-abc123
+# Search NGC catalog
+mlenv catalog search pytorch
 
-cd /projects/computer-vision  
-mlenv up  # Creates: ngc-computer-vision-def456
+# Add image to favorites
+mlenv catalog add nvcr.io/nvidia/pytorch:25.12-py3
 
-# Both can run simultaneously
+# List catalog
+mlenv catalog list
 ```
 
-### Custom Docker Images
+### Resource Monitoring
+
 ```bash
-# NVIDIA PyTorch (default)
-mlenv up --image nvcr.io/nvidia/pytorch:25.12-py3
-
-# NVIDIA TensorFlow
-mlenv up --image nvcr.io/nvidia/tensorflow:24.12-tf2-py3
-
-# Custom image with your base setup
-mlenv up --image yourusername/ml-base:latest
-```
-
-### Environment Variables
-```bash
-# .env file
-API_KEY=secret123
-MODEL_PATH=/workspace/models
-BATCH_SIZE=32
-WANDB_PROJECT=my-experiment
-
-mlenv up --env-file .env
-
-# Access inside container
-mlenv exec -c 'echo $API_KEY'
-```
-
-### Resource Management
-```bash
-# Limit resources to share GPU server
-mlenv up \
-  --gpu 0,1 \        # Use only GPUs 0 and 1
-  --memory 32g \     # Max 32GB RAM
-  --cpus 8.0         # Max 8 CPU cores
-```
-
-### Development + Production Setup
-```bash
-# Development (with Jupyter, TensorBoard)
-mlenv up \
-  --requirements requirements-dev.txt \
-  --port 8888:8888,6006:6006 \
-  --verbose
-
-# Production (lean, specific resources)
-mlenv up \
-  --requirements requirements.txt \
-  --gpu 0 \
-  --memory 16g \
-  --no-user-mapping  # If needed for deployment
-```
-
-## 📊 Monitoring & Debugging
-
-### Check Container Status
-```bash
+# Enhanced status with resource usage
 mlenv status
 
 # Output:
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# Container: ngc-myproject-a3f8c21d
+# Container: mlenv-myproject-abc123
 # Status: running
-# Workdir: /home/user/projects/myproject
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#
-# GPU Status:
-# index, name, utilization.gpu, memory.used, memory.total
-# 0, NVIDIA A100, 45%, 12000 MiB, 40960 MiB
+# CPU: 45% | Memory: 12.5GB/32GB (39%)
+# GPU 0: 78% util | 8.2GB/40GB
 ```
 
-### View Logs
+**[→ Advanced Usage Guide](docs/guides/user-guide.md#advanced-features)**
+
+## 📦 Deployment
+
+### Production Installation
+
 ```bash
-# NGC manager logs
-mlenv logs
+# Using DEB package
+wget https://github.com/amrit2356/mlenv/releases/download/v2.0.0/mlenv_2.0.0_amd64.deb
+sudo dpkg -i mlenv_2.0.0_amd64.deb
 
-# Docker container logs
-docker logs ngc-myproject-a3f8c21d
-
-# Follow logs in real-time
-docker logs -f ngc-myproject-a3f8c21d
+# Using RPM package
+wget https://github.com/amrit2356/mlenv/releases/download/v2.0.0/mlenv-2.0.0-1.x86_64.rpm
+sudo rpm -ivh mlenv-2.0.0-1.x86_64.rpm
 ```
 
-### GPU Monitoring
+### Multi-User Setup
+
 ```bash
-# Inside container
-mlenv exec -c "watch -n 1 nvidia-smi"
+# Install system-wide
+sudo ./install.sh
 
-# Or use gpustat
-mlenv exec -c "pip install gpustat && gpustat -i 1"
+# Users can run without sudo
+mlenv up --auto-gpu
 ```
 
-## 🐛 Troubleshooting
+### Resource Limits
 
-### Container won't start
 ```bash
-# Check Docker daemon
-docker info
-
-# Check NVIDIA runtime
-docker info | grep -i nvidia
-
-# View detailed logs
-mlenv up --verbose
-mlenv logs
+# Set system-wide defaults in /etc/mlenv/mlenv.conf
+MAX_MEMORY=64g
+MAX_CPUS=16
+ENABLE_ADMISSION_CONTROL=true
+MEMORY_THRESHOLD=85
+CPU_THRESHOLD=90
 ```
 
-### GPU not detected
-```bash
-# Verify NVIDIA driver
-nvidia-smi
+**[→ Complete Deployment Guide](docs/guides/deployment.md)**
 
-# Test GPU in Docker
-docker run --rm --gpus all nvidia/cuda:12.0.0-base-ubuntu22.04 nvidia-smi
-
-# If failed, reinstall NVIDIA Container Toolkit:
-# https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
-```
-
-### Port already in use
-```bash
-# Find what's using the port
-lsof -ti:8888
-
-# Kill the process
-lsof -ti:8888 | xargs kill -9
-
-# Or use a different port
-mlenv up --port 8889:8888
-```
-
-### Permission denied errors
-```bash
-# Files created in container have wrong ownership?
-# By default runs as your user, but if you need root:
-mlenv up --no-user-mapping
-
-# Fix existing permissions
-mlenv exec -c "chown -R $(id -u):$(id -g) /workspace"
-```
-
-### Requirements won't update
-```bash
-# Force reinstall
-mlenv up --force-requirements
-
-# Or remove and recreate
-mlenv rm
-mlenv up --requirements requirements.txt
-```
-
-### Out of memory
-```bash
-# Check GPU memory
-mlenv exec -c "nvidia-smi"
-
-# Increase shared memory (edit script line 83):
---shm-size=32g  # default is 16g
-
-# Or reduce batch size in your code
-```
-
-### Container name collision
-The script uses directory hash to prevent this, but if you renamed your project:
-```bash
-# List all NGC containers
-docker ps -a | grep ngc-
-
-# Remove old ones
-docker rm -f ngc-oldname-12345678
-```
-
-## 🔒 Security Best Practices
-
-1. **Use `.gitignore`**:
-```bash
-# .gitignore
-.mlenv/            # MLEnv state and logs
-.devcontainer/     # Auto-generated VS Code config
-.env              # Environment variables
-*.pth             # PyTorch checkpoints
-*.ckpt            # Model checkpoints
-```
-
-2. **Environment Variables**: Never commit API keys. Use `--env-file` with `.env` in `.gitignore`.
-
-3. **User Mapping**: Default runs as your user (not root). Only use `--no-user-mapping` when necessary.
-
-4. **Network Isolation**: Ports are only exposed on localhost by default. For remote access, use SSH tunneling:
-```bash
-# On remote server
-mlenv up --port 8888:8888
-
-# On local machine
-ssh -L 8888:localhost:8888 user@remote-server
-
-# Access via localhost:8888
-```
-
-## 🎯 Best Practices
-
-### Project Structure
-```
-my-ml-project/
-├── mlenv                 # This script
-├── requirements.txt      # Python dependencies
-├── .env                 # Environment variables (gitignored)
-├── .gitignore           # Ignore .mlenv/, .devcontainer/, .env
-├── train.py             # Training script
-├── evaluate.py          # Evaluation script
-├── data/                # Dataset
-├── models/              # Saved models
-├── notebooks/           # Jupyter notebooks
-├── .mlenv/              # MLEnv state (gitignored)
-│   ├── mlenv.log        # Debug logs
-│   ├── devcontainer.json # VS Code config backup
-│   └── init.sh          # Container init script
-└── .devcontainer/       # VS Code Dev Container (auto-generated, gitignored)
-    └── devcontainer.json
-```
-
-### Workflow
-```bash
-# 1. Setup (once per project)
-mlenv up --requirements requirements.txt --port 8888:8888
-
-# 2. Develop
-mlenv jupyter  # or mlenv exec
-
-# 3. When done for the day
-mlenv down
-
-# 4. Next day
-mlenv up  # Fast startup, requirements cached
-mlenv exec
-
-# 5. Clean slate (if needed)
-mlenv rm
-mlenv up --force-requirements
-```
-
-### Version Control
-```bash
-# Commit the script with your project
-git add mlenv requirements.txt
-git commit -m "Add NGC container manager"
-
-# Others can use it
-git clone <your-repo>
-cd <your-repo>
-chmod +x ngc
-./mlenv up --requirements requirements.txt
-```
-
-## 🚧 Known Limitations
-
-Current version has a few limitations we're aware of:
-
-- **Manual updates** - No built-in update mechanism (requires git pull + reinstall)
-- **No config file** - Can't set persistent defaults (`.ngcrc` planned)
-- **Manual completion reload** - Shell completions require terminal restart
-- **Container logs** - No built-in log aggregation (use `docker logs` or `mlenv logs`)
-
-**Note:** This tool is designed for Linux systems with NVIDIA GPUs. macOS and Windows native are not supported. Windows users should use WSL2 with NVIDIA GPU support.
-
-See the [Roadmap](#-roadmap) below for planned improvements.
 
 ## 🗺️ Roadmap
 
-### v1.1.0 (Current Release) ✨
+### v2.1 (Next Release)
+- [ ] **Web Dashboard** - Monitor containers and GPUs via web UI
+- [ ] **More Templates** - TensorFlow, Transformers, Stable Diffusion
+- [ ] **Remote Development** - SSH server for remote access
+- [ ] **Enhanced Monitoring** - Real-time graphs and alerts
 
-**New Features:**
-- ✅ **VS Code Dev Containers** - Auto-generate `.devcontainer/devcontainer.json` for seamless IDE integration
-- ✅ **Smart Jupyter** - `mlenv jupyter` auto-creates containers with port forwarding (no `mlenv up` needed)
-- ✅ **Auto-port detection** - Jupyter automatically finds and uses forwarded ports
-- ✅ **Container auto-recreation** - Rebuilds containers with correct ports if needed
+### v2.2 (Planned)
+- [ ] **Experiment Tracking** - Built-in W&B, MLflow integration
+- [ ] **Multi-container** - Docker Compose-style orchestration
+- [ ] **GPU Scheduling** - Queue and wait for GPU availability
+- [ ] **Jupyter Extensions** - Auto-install popular extensions
 
-### v1.2 (Next Release)
-- [ ] **Auto-update mechanism** - `mlenv update` to pull latest version
-- [ ] **Enhanced status** - Show resource usage (CPU, memory, GPU utilization)
-- [ ] **Better error messages** - Contextual help and suggestions
+### v3.0 (Future)
+- [ ] **Cloud Integration** - Deploy to AWS, GCP, Azure
+- [ ] **Team Features** - Shared resource pools, user quotas
+- [ ] **Container Snapshots** - Save/restore container state
+- [ ] **Central Management** - Multi-server dashboard
 
-### v1.3 (Planned)
-- [ ] **Config file support** - `~/.ngcrc` for default settings
-- [ ] **Project templates** - `mlenv init --template pytorch|tensorflow|transformers`
-- [ ] **Auto GPU detection** - `mlenv up --auto-gpu` to find free GPUs
-- [ ] **Better testing** - Full integration test suite
-
-### v2.0 (Future)
-- [ ] **Multi-container** - Support for related services (db, web, training)
-- [ ] **Experiment tracking** - Built-in W&B, MLflow integration
-- [ ] **GPU scheduling** - Wait for GPU availability
-- [ ] **Jupyter extensions** - Auto-install popular extensions
-- [ ] **Central management** - Team dashboard for shared servers
-- [ ] **Container snapshots** - Save/restore container state
-- [ ] **Cloud integration** - Easy deployment to cloud GPU providers
-
-### Want a Feature?
-Open an issue describing your use case, or submit a PR! Popular requests get prioritized.
+**Want a feature?** Open an [issue](https://github.com/amrit2356/mlenv/issues) or submit a PR!
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! We'd especially appreciate help with:
+- **Templates** - Add templates for popular frameworks
+- **Testing** - Expand test coverage
+- **Documentation** - Examples for specific use cases
+- **Windows WSL2** - Testing and improvements
 
-### Development Setup
-```bash
-git clone https://github.com/your-username/mlenv.git
-cd mlenv
-chmod +x ngc
-
-# Test locally
-./mlenv up --verbose
-./mlenv status
-```
-
-### Priority Areas
-We'd especially appreciate help with:
-- **Windows WSL2** - Testing and documentation improvements
-- **Shell completions** - Improvements for zsh/fish
-- **Test coverage** - More comprehensive test suite
-- **Documentation** - Examples for specific frameworks (Transformers, Stable Diffusion, etc.)
+See [Contributing Guide](docs/development/contributing.md) for details.
 
 ## 📄 License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for details
+
+---
 
 ## 🙏 Acknowledgments
 
-- Built on top of [NVIDIA NGC containers](https://catalog.ngc.nvidia.com/)
-- Inspired by Docker Compose and development container workflows
+- Built on [NVIDIA NGC containers](https://catalog.ngc.nvidia.com/)
 - Uses [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-container-toolkit)
+- Inspired by Docker Compose and development container workflows
+
+---
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-username/mlenv/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/mlenv/discussions)
-- **Documentation**: See `QUICKSTART.md` and `IMPROVEMENTS.md`
-
-## 🔗 Related Projects
-
-- [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) - NVIDIA Container Toolkit
-- [docker-compose](https://docs.docker.com/compose/) - Multi-container orchestration
-- [Dev Containers](https://containers.dev/) - VS Code development containers
+- **Issues**: [GitHub Issues](https://github.com/amrit2356/mlenv/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/amrit2356/mlenv/discussions)
+- **Documentation**: [docs/](docs/index.md)
 
 ---
 

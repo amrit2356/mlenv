@@ -3,3 +3,18 @@
 
 # Dev Container auto-generated config (regenerated on container creation)
 .devcontainer/
+.ipynb_checkpoints/
+
+# Build artifacts
+packaging/deb-build/
+packaging/rpm-build/
+packaging/*.deb
+packaging/*.rpm
+
+# Test artifacts
+tests/fixtures/temp/
+*.test.db
+
+# Runtime data
+var/mlenv/registry/catalog.db
+var/mlenv/cache/

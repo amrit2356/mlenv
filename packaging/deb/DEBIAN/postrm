@@ -1,0 +1,18 @@
+#!/bin/bash
+# MLEnv post-removal script
+
+set -e
+
+if [ "$1" = "purge" ]; then
+    echo "Purging MLEnv data..."
+    
+    # Remove user data only on purge
+    rm -rf /var/mlenv
+    
+    # Remove bash completion
+    rm -f /usr/share/bash-completion/completions/mlenv
+    
+    echo "MLEnv data purged"
+fi
+
+exit 0
