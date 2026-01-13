@@ -1,0 +1,106 @@
+# MLEnv User Configuration Example
+# Version: 2.0.0
+# Copy to: ~/.mlenvrc
+
+# ============================================================================
+# Core Settings
+# ============================================================================
+[core]
+log_level = info                  # debug, info, warn, error
+default_adapter = docker          # docker, podman, containerd
+
+# ============================================================================
+# Container Runtime
+# ============================================================================
+[container]
+adapter = docker
+default_image = nvcr.io/nvidia/pytorch:25.12-py3
+runtime = nvidia
+restart_policy = unless-stopped
+shm_size = 16g
+run_as_user = true               # false = run as root
+
+# ============================================================================
+# GPU Configuration
+# ============================================================================
+[gpu]
+default_devices = all            # all, 0,1,2, or auto
+auto_detect_free = false         # Auto-select free GPUs
+utilization_threshold = 30       # GPUs below this % considered free
+min_free_memory_mb = 1000        # Minimum GPU memory to consider "free"
+
+# ============================================================================
+# Network & Ports
+# ============================================================================
+[network]
+default_ports = 8888:8888,6006:6006
+port_range = 8888-8899           # Auto-assign from this range
+auto_port_forward = true
+network_mode = bridge            # bridge, host, none
+
+jupyter_default_port = 8888
+jupyter_auto_start = false
+
+tensorboard_default_port = 6006
+tensorboard_auto_start = false
+
+# ============================================================================
+# Storage & Volumes
+# ============================================================================
+[storage]
+workdir_mount = /workspace
+volume_driver = local            # local, nfs, cifs
+cache_images = true
+cache_requirements = true
+
+# ============================================================================
+# Resource Limits
+# ============================================================================
+[resources]
+# Default limits (empty = no limit)
+default_memory_limit =           # e.g., 16g, 32g
+default_cpu_limit =              # e.g., 4.0, 8.0
+default_gpu_limit =              # Number of GPUs
+
+# System protection
+enable_admission_control = false
+max_memory_percent = 85          # Max system memory usage
+min_available_memory_gb = 4      # Always keep this free
+
+# ============================================================================
+# Registry & Authentication
+# ============================================================================
+[registry]
+default = ngc                    # ngc, dockerhub, custom
+ngc_url = nvcr.io
+dockerhub_url = docker.io
+
+# ============================================================================
+# Requirements & Dependencies
+# ============================================================================
+[requirements]
+auto_detect = true               # Auto-detect requirements.txt
+auto_install = false             # Auto-install on container start
+force_reinstall = false
+
+# ============================================================================
+# Development Features
+# ============================================================================
+[devcontainer]
+auto_generate = true             # Auto-create .devcontainer/
+vscode_extensions = ms-python.python,ms-toolsai.jupyter,ms-python.vscode-pylance,charliermarsh.ruff
+
+# ============================================================================
+# Features
+# ============================================================================
+[features]
+enable_plugins = false
+enable_telemetry = false
+
+# ============================================================================
+# Example Aliases (uncomment to use)
+# ============================================================================
+# [aliases]
+# dev = up --requirements requirements-dev.txt --port 8888:8888,6006:6006
+# prod = up --requirements requirements.txt --no-user-mapping
+# train = exec -c "python train.py"

@@ -1,0 +1,21 @@
+Package: mlenv
+Version: 2.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: docker.io (>= 20.10) | docker-ce (>= 20.10), sqlite3, bash (>= 4.0)
+Recommends: jq, nvidia-container-toolkit
+Maintainer: MLEnv Team <mlenv@example.com>
+Homepage: https://github.com/your-username/mlenv
+Description: ML Environment Manager - GPU Container Management
+ MLEnv is a production-grade command-line tool for managing NVIDIA
+ GPU-accelerated Docker containers for deep learning and scientific computing.
+ .
+ Features:
+  - Zero-config GPU access with automatic detection
+  - VS Code Dev Containers integration
+  - Smart Jupyter Lab management
+  - Resource monitoring and admission control
+  - NGC container catalog integration
+  - Project templates for quick start
+  - Crash prevention with safety checks

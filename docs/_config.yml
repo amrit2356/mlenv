@@ -1,0 +1,73 @@
+# Jekyll configuration for GitHub Pages
+
+title: MLEnv Documentation
+description: Production-Grade ML Container Management Platform
+url: https://your-username.github.io
+baseurl: /mlenv
+
+theme: jekyll-theme-cayman
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Getting Started
+    url: /guides/getting-started
+  - title: User Guide
+    url: /guides/user-guide
+  - title: Reference
+    url: /reference/
+  - title: GitHub
+    url: https://github.com/your-username/mlenv
+
+# GitHub metadata
+repository: your-username/mlenv
+
+# Build settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Collections
+collections:
+  guides:
+    output: true
+    permalink: /guides/:name
+  reference:
+    output: true
+    permalink: /reference/:name
+  development:
+    output: true
+    permalink: /development/:name
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Exclude from build
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - README.md
+  - LICENSE
+  - "*.sh"
+  - tests/
+  - packaging/
+  - bin/
+  - lib/
+
+# Include
+include:
+  - _pages

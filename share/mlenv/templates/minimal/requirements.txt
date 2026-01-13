@@ -1,0 +1,8 @@
+# {{PROJECT_NAME}} Requirements
+# Generated: {{DATE}}
+
+# Core packages
+numpy
+pandas
+matplotlib
+jupyter
