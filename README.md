@@ -10,9 +10,6 @@
 
 MLEnv is a production-grade environment manager designed to eliminate setup complexity in machine learning and AI development. It provides safe, reproducible, GPU-ready development environments so engineers and researchers can focus on building, experimenting, and deploying AI systems — not debugging CUDA, drivers, or containers. If it runs in MLEnv, it can be trusted in production.
 
-It is a production-grade GPU container management platform tailored for ML/AI development workflows. It focuses on simplifying the way developers work with NVIDIA GPU-accelerated Docker containers, leveraging NVIDIA NGC images and tooling.
-
-
 📖 **[Full Documentation](docs/index.md)** | 🚀 **[Getting Started](docs/guides/getting-started.md)** | 📦 **[Deployment Guide](docs/guides/deployment.md)**
 
 ---
