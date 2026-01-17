@@ -64,9 +64,34 @@ source "${MLENV_LIB}/core/engine.sh"
 [[ -f "${MLENV_LIB}/utils/port-utils.sh" ]] && source "${MLENV_LIB}/utils/port-utils.sh"
 [[ -f "${MLENV_LIB}/utils/container-utils.sh" ]] && source "${MLENV_LIB}/utils/container-utils.sh"
 
-# ============================================================================
-# LOAD COMMAND IMPLEMENTATIONS
-# ============================================================================
+  # Full setup with Jupyter (auto-detects port 8888)
+  mlenv up --requirements requirements.txt --port 8888:8888,6006:6006
+  mlenv jupyter
+  # Access at: http://localhost:8888
+
+  # Jupyter on custom port
+  mlenv up --port 8889:8889
+  mlenv jupyter
+  # Access at: http://localhost:8889
+
+  # Multiple Jupyter instances on same container
+  mlenv up --port 8888:8888,8889:8889,8890:8890
+  mlenv jupyter --port 8888    # Terminal 1 → http://localhost:8888
+  mlenv jupyter --port 8889    # Terminal 2 → http://localhost:8889
+
+  # Run specific command
+  mlenv exec -c "python train.py --epochs 10"
+  
+PORT FORWARDING NOTES:
+  • Port forwarding must be set during container creation (mlenv up --port)
+  • Format: "host_port:container_port" (e.g., "8888:8888")
+  • mlenv jupyter automatically detects forwarded ports
+  • Priority: 8888 → 8889-8899 → first available
+  • Check current forwarding with: mlenv status
+  
+For more information: https://github.com/your-username/mlenv
+EOF
+}
 
 # Load all command modules
 if [[ -d "${MLENV_LIB}/commands" ]]; then
@@ -102,6 +127,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --port)
+            # Handle both --port for 'up' and 'jupyter' commands
             if [[ "$command" == "jupyter" ]]; then
                 JUPYTER_PORT="$2"
             else
@@ -210,12 +236,8 @@ case "$command" in
     
     # Information
     status)   cmd_status ;;
-    logs)     cmd_logs ;;
-    
-    # Maintenance
-    clean)    cmd_clean "${CMD_ARGS[@]+"${CMD_ARGS[@]}"}" ;;
-    
-    # Help & Version
+    jupyter)  cmd_jupyter ;;
+    config)   cmd_config "$@" ;;
     version|--version|-v)  cmd_version ;;
     help|--help|-h)  cmd_help ;;
     
