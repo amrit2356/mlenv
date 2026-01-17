@@ -1,9 +1,5 @@
 <p align="center">
-  <img src="assets/favicon.png" width="48" alt="MLEnv Favicon">
-</p>
-
-<p align="center">
-  <img src="assets/mlenv-banner.png" width="260" alt="MLEnv Logo">
+  <img src="assets/banner.png", alt="MLEnv Logo">
 </p>
 
 # MLEnv - ML Environment Manager
