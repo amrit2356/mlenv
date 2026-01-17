@@ -1,265 +1,190 @@
----
-layout: default
-title: MLEnv Documentation
----
+# MLEnv Documentation
 
-# MLEnv v2.0.0 Documentation
+![MLEnv Logo](assets/images/mlenv-logo.svg)
 
-**Production-Grade ML Container Management Platform**
+**Version 2.0.0** | [GitHub](https://github.com/amrit2356/mlenv) | [Issues](https://github.com/amrit2356/mlenv/issues)
 
-Welcome to the comprehensive documentation for MLEnv v2.0.0 - an enterprise-grade platform for managing GPU-accelerated Docker containers for machine learning workloads.
+Welcome to the MLEnv documentation! MLEnv is a production-grade GPU container management platform for machine learning and AI development.
 
 ---
 
 ## 🚀 Quick Links
 
-- [**Getting Started**](guides/getting-started.md) - Install and run your first container
-- [**User Guide**](guides/user-guide.md) - Complete feature documentation
-- [**Configuration**](reference/configuration.md) - Config file reference
-- [**Templates**](reference/templates.md) - Project template system
-- [**API Reference**](reference/api.md) - Module and function reference
-- [**Deployment**](guides/deployment.md) - Production deployment guide
+<div class="quick-links">
+  <div class="link-card">
+    <h3>🎯 Getting Started</h3>
+    <p>New to MLEnv? Start here!</p>
+    <a href="../README.md">Quick Start Guide →</a>
+  </div>
+  
+  <div class="link-card">
+    <h3>📐 Architecture</h3>
+    <p>Understand the system design</p>
+    <a href="architecture/overview.md">Architecture Overview →</a>
+  </div>
+  
+  <div class="link-card">
+    <h3>🔧 API Reference</h3>
+    <p>Complete API documentation</p>
+    <a href="api/commands/README.md">API Docs →</a>
+  </div>
+  
+  <div class="link-card">
+    <h3>🔬 Development</h3>
+    <p>Contribute to MLEnv</p>
+    <a href="../docs.backup/development/phase1-architecture.md">Development Docs →</a>
+  </div>
+</div>
 
 ---
 
-## 📚 Documentation Sections
+## 📚 Documentation Structure
 
-### Guides
-- [Getting Started](guides/getting-started.md) - Quick start guide
-- [User Guide](guides/user-guide.md) - Complete usage documentation
-- [Migration Guide](guides/migration.md) - Upgrading from v1.x
-- [Deployment Guide](guides/deployment.md) - Production deployment
-- [Best Practices](guides/best-practices.md) - Recommendations
+### 📐 Architecture Documentation
+Understand MLEnv's hexagonal architecture and design patterns.
 
-### Reference
-- [Configuration Reference](reference/configuration.md) - All config options
-- [Template Reference](reference/templates.md) - Template system
-- [API Reference](reference/api.md) - Module documentation
-- [CLI Reference](reference/cli.md) - All commands
-- [Architecture](reference/architecture.md) - System design
+- **[Architecture Overview](architecture/overview.md)** - High-level system design
+- **[Hexagonal Design](architecture/hexagonal-design.md)** - Ports & Adapters pattern
+- **[Context System](architecture/context-system.md)** - State management
+- **[Configuration System](architecture/config-system.md)** - 4-level config hierarchy
+- **[Database Design](architecture/database-design.md)** - SQLite schema & data model
+- **[Error Handling](architecture/error-handling.md)** - Error handling patterns
+- **[Security Model](architecture/security-model.md)** - Security architecture
+- **[Module Dependencies](architecture/module-dependencies.md)** - Dependency graph
 
-### Development
-- [Architecture Overview](development/architecture.md) - Hexagonal design
-- [Contributing Guide](development/contributing.md) - How to contribute
-- [Testing Guide](development/testing.md) - Test framework
-- [Packaging Guide](development/packaging.md) - Building packages
-- [Release Process](development/releases.md) - Release workflow
+### 🔧 API Reference
+Complete API documentation for all modules and commands.
 
----
+#### Commands API
+- **[Commands Overview](api/commands/README.md)** - All commands indexed
+- **[mlenv up](api/commands/up.md)** - Container creation
+- **[mlenv exec](api/commands/exec.md)** - Execute in container
+- **[mlenv jupyter](api/commands/jupyter.md)** - Jupyter Lab
+- **[mlenv status](api/commands/status.md)** - Container status
+- [View all commands →](api/commands/README.md)
 
-## 🌟 What is MLEnv?
+#### Core API
+- **[Core Overview](api/core/README.md)** - Core modules
+- **[Engine API](api/core/engine.md)** - Initialization & orchestration
+- **[Context API](api/core/context.md)** - Context management
+- **[Container API](api/core/container.md)** - Container lifecycle
+- **[GPU API](api/core/gpu.md)** - GPU detection & allocation
+- [View all core modules →](api/core/README.md)
 
-MLEnv is a production-grade command-line tool that simplifies GPU-accelerated machine learning development by:
+#### Adapters API
+- **[Adapters Overview](api/adapters/README.md)** - Hexagonal adapters
+- **[Container Port](api/adapters/container-port.md)** - Container interface
+- **[Docker Adapter](api/adapters/docker-adapter.md)** - Docker implementation
+- **[Custom Adapters](api/adapters/custom-adapters.md)** - Build your own
+- [View all adapters →](api/adapters/README.md)
 
-- **Managing Docker containers** with GPU support
-- **Preventing system crashes** through admission control
-- **Auto-detecting free GPUs** for intelligent allocation
-- **Quick-starting projects** with templates
-- **Monitoring resources** in real-time
-- **Tracking container health** automatically
-
----
-
-## ⚡ Quick Start
-
-```bash
-# Install
-sudo ./install.sh
-
-# Create project
-mlenv init --template pytorch my-project
-
-# Start with auto-GPU
-cd my-project
-mlenv up --auto-gpu
-
-# Enter container
-mlenv exec
-```
+#### Additional APIs
+- **[Configuration API](api/config/README.md)** - Config system
+- **[Database API](api/database/README.md)** - SQLite operations
+- **[Resource API](api/resource/README.md)** - Admission control & monitoring
+- **[Templates API](api/templates/README.md)** - Template engine
+- **[Utilities API](api/utils/README.md)** - Helper functions
 
 ---
 
-## 🎯 Key Features
+## 🎓 Learning Paths
 
-### Core Capabilities
-- Zero-config GPU access
-- Smart GPU allocation (auto-detect)
-- User mapping (non-root security)
-- Port forwarding
-- Requirements caching
-- VS Code DevContainer integration
+### For Users
+1. Read the [README](../README.md) for project overview
+2. Follow [Getting Started](../docs.backup/guides/getting-started.md)
+3. Explore [User Guide](../docs.backup/guides/getting-started.md)
+4. Check [Advanced Usage](api/commands/README.md)
 
-### Safety & Monitoring
-- **Admission control** (crash prevention)
-- Real-time resource monitoring
-- Container health checks
-- Project quotas
-- Historical metrics
+### For Developers
+1. Understand [Architecture Overview](architecture/overview.md)
+2. Read [Hexagonal Design](architecture/hexagonal-design.md)
+3. Study [API Documentation](api/commands/README.md)
+4. Review [Development Guide](../docs.backup/development/phase1-architecture.md)
 
-### Developer Experience
-- Project templates (PyTorch, Minimal)
-- Config file support (~/.mlenvrc)
-- Quick commands
-- Auto GPU detection
-
-### Enterprise Features
-- Linux packages (DEB/RPM)
-- SQLite database backend
-- NGC catalog integration
-- Multi-project support
-- Professional testing
+### For Contributors
+1. Read [Architecture Overview](architecture/overview.md)
+2. Study [Module Dependencies](architecture/module-dependencies.md)
+3. Check [Coding Standards](../docs.backup/development/phase1-architecture.md)
+4. Review [Testing Guide](../docs.backup/development/phase5-testing.md)
 
 ---
 
-## 📊 Architecture
+## 🔍 Search & Navigate
 
-MLEnv uses **Hexagonal Architecture** (Ports & Adapters):
-
-```
-┌────────────────────────┐
-│  CLI & Config          │
-├────────────────────────┤
-│  Ports (Interfaces)    │
-├────────────────────────┤
-│  Core Logic            │
-├────────────────────────┤
-│  Adapters              │
-│  (Docker, NGC, etc.)   │
-└────────────────────────┘
-```
-
-[Learn more about the architecture →](development/architecture.md)
+- **Search**: Use GitHub's search or `Ctrl/Cmd+F` in your browser
+- **Navigation**: Use the sidebar (when viewing on GitHub Pages)
+- **Cross-references**: Links to related docs throughout
+- **Source code**: Direct links to implementation
 
 ---
 
-## 🛡️ Safety Features
+## 📖 Key Concepts
+
+### Hexagonal Architecture
+MLEnv uses the Ports & Adapters pattern to separate core logic from external dependencies.
+[Learn more →](architecture/hexagonal-design.md)
+
+### Context Object
+A structured state object passed through all operations instead of global variables.
+[Learn more →](architecture/context-system.md)
 
 ### Admission Control
-Prevents system crashes by checking:
-- Memory usage < 85%
-- Available memory > 4GB
-- CPU usage < 90%
-- Load average reasonable
-- GPU availability
+Prevents system crashes by checking resources before container creation.
+[Learn more →](api/resource/admission.md)
 
-### Example
-```bash
-mlenv up --memory 64g
-# → REJECTED: Requested memory exceeds available
-# System protected! ✅
-```
+### Configuration Hierarchy
+4-level configuration: System → User → Project → CLI
+[Learn more →](architecture/config-system.md)
 
 ---
 
-## 🤖 Intelligent Features
+## 🛠️ Documentation Tools
 
-### Auto GPU Detection
-```bash
-mlenv up --auto-gpu
-# → Automatically selects GPU 2
-# → (GPUs 0,1 are busy)
-```
+### Scripts
+- `scripts/generate-diagrams.sh` - Generate architecture diagrams
+- `scripts/validate-docs.sh` - Validate links and references
+- `scripts/serve-docs.sh` - Local documentation server
 
-### Resource Monitoring
-```bash
-mlenv status
-# → CPU: 45%, Memory: 37%
-# → GPU 0: 15% util
-```
+### Contributing to Docs
+See [Documentation Guidelines](../docs.backup/development/phase1-architecture.md) for how to contribute.
 
 ---
 
-## 📦 Installation
+## 📊 Documentation Status
 
-### Quick Install
-```bash
-sudo ./install.sh
-```
-
-### Package Managers
-```bash
-# Debian/Ubuntu
-sudo dpkg -i mlenv_2.0.0_amd64.deb
-
-# RHEL/CentOS
-sudo rpm -ivh mlenv-2.0.0-1.*.rpm
-```
-
-[Complete installation guide →](guides/deployment.md)
+| Section | Status | Coverage |
+|---------|--------|----------|
+| Architecture | ✅ Complete | 100% |
+| API - Commands | ✅ Complete | 100% |
+| API - Core | ✅ Complete | 100% |
+| API - Adapters | ✅ Complete | 100% |
+| API - Config | ✅ Complete | 100% |
+| API - Database | ✅ Complete | 100% |
+| API - Utils | ✅ Complete | 100% |
 
 ---
 
-## 📖 Documentation Navigation
+## 🤝 Get Help
 
-### New Users
-1. [Getting Started](guides/getting-started.md)
-2. [User Guide](guides/user-guide.md)
-3. [Configuration](reference/configuration.md)
-
-### Advanced Users
-1. [Architecture](reference/architecture.md)
-2. [API Reference](reference/api.md)
-3. [Best Practices](guides/best-practices.md)
-
-### Developers
-1. [Architecture Overview](development/architecture.md)
-2. [Contributing](development/contributing.md)
-3. [Testing](development/testing.md)
-
-### Operators
-1. [Deployment Guide](guides/deployment.md)
-2. [Production Setup](guides/best-practices.md)
+- **Issues**: [GitHub Issues](https://github.com/amrit2356/mlenv/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/amrit2356/mlenv/discussions)
+- **Email**: support@mlenv.io
 
 ---
 
-## 🎓 Key Concepts
+## 📝 Documentation Version
 
-### Container Lifecycle
-- **Create** - `mlenv up`
-- **Execute** - `mlenv exec`
-- **Stop** - `mlenv down`
-- **Remove** - `mlenv rm`
-
-### GPU Management
-- **Auto-detect** - `--auto-gpu`
-- **Manual** - `--gpu 0,1`
-- **Status** - `mlenv gpu status`
-
-### Project Management
-- **Templates** - `mlenv init --template TYPE`
-- **List** - `mlenv list`
-- **Clean** - `mlenv clean`
+- **Version**: 2.0.0
+- **Last Updated**: 2026-01-18
+- **MLEnv Version**: 2.0.0
 
 ---
 
-## 🔗 External Resources
-
-- [GitHub Repository](https://github.com/your-username/mlenv)
-- [Issue Tracker](https://github.com/your-username/mlenv/issues)
-- [Discussions](https://github.com/your-username/mlenv/discussions)
-- [NVIDIA NGC Catalog](https://catalog.ngc.nvidia.com/)
-
----
-
-## 📊 Statistics
-
-- **80+ Features**
-- **70+ Files**
-- **25+ Tests**
-- **10+ Documentation Guides**
-- **100% Backward Compatible**
-- **Production Ready**
-
----
-
-## 🆘 Need Help?
-
-- **Quick Reference**: [QUICKREF.md](QUICKREF.md)
-- **FAQ**: [guides/user-guide.md#faq](guides/user-guide.md)
-- **Troubleshooting**: [guides/deployment.md#troubleshooting](guides/deployment.md)
-- **Command Help**: `mlenv help`
-
----
-
-**MLEnv v2.0.0** - Production-Grade ML Container Platform  
-Built with ❤️ for the ML/DL community
+<div class="footer">
+  <p>Made with ❤️ for the ML/DL community</p>
+  <p>
+    <a href="../LICENSE">License</a> | 
+    <a href="https://github.com/amrit2356/mlenv">GitHub</a> | 
+    <a href="https://github.com/amrit2356/mlenv/issues">Issues</a>
+  </p>
+</div>
