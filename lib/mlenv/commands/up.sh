@@ -3,6 +3,9 @@
 # Version: 2.0.0
 
 cmd_up() {
+    # Ensure log directory exists for container operations
+    mkdir -p "$LOG_DIR"
+    
     vlog "Configuration:"
     vlog "  Image: ${IMAGE:-$MLENV_DEFAULT_IMAGE}"
     vlog "  Container: $CONTAINER_NAME"

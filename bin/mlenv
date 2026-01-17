@@ -53,8 +53,6 @@ CPU_LIMIT=""
 RUN_AS_USER=true
 EXEC_CMD=""
 
-mkdir -p "$LOG_DIR"
-
 # ============================================================================
 # LOAD CORE LIBRARIES
 # ============================================================================
@@ -171,7 +169,7 @@ done
 
 # Initialize engine for commands that need it
 case "$command" in
-    init|catalog|config|clean|version|--version|-v|help|--help|-h)
+    init|catalog|clean|version|--version|-v|help|--help|-h)
         # Skip engine init for these lightweight commands
         ;;
     *)

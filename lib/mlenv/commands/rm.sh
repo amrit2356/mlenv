@@ -8,8 +8,10 @@ cmd_rm() {
         container_remove "$CONTAINER_NAME"
         
         # Clean up markers and init script
-        rm -f "$REQUIREMENTS_MARKER"
-        rm -f "${LOG_DIR}/init.sh"
+        if [[ -d "$LOG_DIR" ]]; then
+            rm -f "$REQUIREMENTS_MARKER"
+            rm -f "${LOG_DIR}/init.sh"
+        fi
         
         success "Container removed"
     else
