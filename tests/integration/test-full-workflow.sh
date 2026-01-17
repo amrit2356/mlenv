@@ -2,7 +2,7 @@
 # Full system integration tests
 # Version: 2.0.0
 
-set -euo pipefail
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -26,24 +26,23 @@ test_command() {
     local command="$2"
     local expected_exit="${3:-0}"
     
-    ((TESTS_RUN++))
+    TESTS_RUN=$((TESTS_RUN + 1))
     
     echo -n "  Testing: $description ... "
     
-    if eval "$command" >/dev/null 2>&1; then
-        local actual_exit=0
-    else
-        local actual_exit=$?
-    fi
+    set +e
+    eval "$command" >/dev/null 2>&1
+    local actual_exit=$?
+    set -e
     
     if [[ $actual_exit -eq $expected_exit ]]; then
-        ((TESTS_PASSED++))
+        TESTS_PASSED=$((TESTS_PASSED + 1))
         echo -e "${GREEN}✓${NC}"
         return 0
     else
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
         echo -e "${RED}✗${NC} (expected exit $expected_exit, got $actual_exit)"
-        return 1
+        return 0  # Don't fail the whole script
     fi
 }
 
